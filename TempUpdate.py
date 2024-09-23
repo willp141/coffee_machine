@@ -4,11 +4,12 @@ from machine import Pin # type: ignore
 from machineManager import State
 
 class tempTimer:
-    def __init__(self, shared_data, getstate,target_temp, temp_tolerance, boiler_on, boiler_off):
+    def __init__(self, shared_data, getstate, boiler_on, boiler_off, check_state):
         self.shared_data = shared_data
-        self.period = 5
+        self.period = 1 # reduce period from 5 - 1 second
         self.task = None
         self.tstate = getstate
+        self.check_state = check_state
         
         # Controls
         self.boileron = boiler_on
@@ -22,15 +23,16 @@ class tempTimer:
         print(f"     Found DS18B20 sensors: {self.sensor_rom}")
 
         # Target temperature range
-        self.target_temp = target_temp
-        self.temp_tolerance = temp_tolerance
-
+        self.target_temp = self.shared_data['target_temp']
+        self.temp_tolerance = self.shared_data['temp_tolerance']
+         
     async def startTimer(self):
         """Begin Updating Shared Data"""
         print("Starting Temp Updates")
         try:
             while True:
                 await self.update_temperature()
+                # await self.check_state() # New line of code to force recheck of temp and state every 1 second
                 await asyncio.sleep(self.period)
         except asyncio.CancelledError:
             print("Temperature update task canceled.")
@@ -48,31 +50,31 @@ class tempTimer:
                 # Read temperature from the first sensor in the list (or iterate if multiple sensors)
                 try:
                     self.shared_data['temperature'] = self.temp_sensor.read_temp(self.sensor_rom[0])
-                    print(f"Current Boiler Temperature: {self.shared_data['temperature']}°C")
+                    print(f"     Current Boiler Temperature: {self.shared_data['temperature']}°C")
                 except Exception as e:
                     print(f"Error reading temperature: {e}")
             current_state = self.tstate()
             # Control boiler heater based on temperature range
             if current_state == State.DEFAULT:
-                print("State 0 Temp Handler No action")
+                print("     update_temparature: State 0 No action")
             elif current_state == State.AUTO or State.GET_READY or State.PUMP or State.STEAM:
                 if (self.current_temperature < (self.target_temp - self.temp_tolerance)):
                     self.boileron()  # Turn on heater
                     self.shared_data['heater_state'] = True
-                    print("Temp Updated turned on heater")
+                    print("     update_temparature: Temp Updated turned on heater")
                 elif (self.current_temperature > (self.target_temp + self.temp_tolerance)):
                     self.boileroff()  # Turn off heater
                     self.shared_data['heater_state'] = False
-                    print("Temp Updated turned off heater")
+                    print("     update_temparature: Temp Updated turned off heater")
                 else:
-                    print("Temp Update left heater in current state")
+                    print("     update_temparature: Temp Update left heater in current state")
             else:
                 self.boileroff()  # Turn off heater
                 self.shared_data['heater_state'] = False              
-                print("Temp Update read invalid state, turned heater off.")
+                print("     update_temparature: Temp Update read invalid state, turned heater off.")
         except KeyboardInterrupt:
             print("Keyboard interrupt received. Shutting down...")
             self.boileroff()  # Turn off heater
             self.shared_data['heater_state'] = False              
-            print("Turned heater off")
-            self.shutdown()  # Call the shutdown function to handle any cleanup
+            print("     update_temparature: Turned heater off")
+            # self.shutdown()  # Call the shutdown function to handle any cleanup, no longer defined>

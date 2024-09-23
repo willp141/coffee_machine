@@ -67,7 +67,7 @@ class SDCard:
         self.cs.init(self.cs.OUT, value=1)
 
         # init SPI bus; use low data rate for initialisation
-        self.init_spi(500000)
+        self.init_spi(200000)
 
         # clock card at least 100 cycles with cs high
         for i in range(16):
@@ -80,12 +80,9 @@ class SDCard:
         else:
             raise OSError("no SD card")
         
-        # After sending CMD0
-        print("CMD0 response:", self.cmd(0, 0, 0x95))
-
         # CMD8: determine card version
         r = self.cmd(8, 0x01AA, 0x87, 4)
-        print("CMD8 response (Choosing card version):", self.cmd(8, 0x01AA, 0x87, 4))
+        print("CMD8 response (Choosing card version):", r)
         if r == _R1_IDLE_STATE:
             self.init_card_v2()
         elif r == (_R1_IDLE_STATE | _R1_ILLEGAL_COMMAND):
@@ -94,11 +91,8 @@ class SDCard:
             raise OSError("couldn't determine SD card version")
 
         # # Modified Driver to force V1 Card Initialization
-
         # try:
         #     # CMD55 and CMD41 debugging in init_card_v1
-        #     print("CMD55 response (v1):", self.cmd(55, 0, 0))
-        #     print("CMD41 response (v1):", self.cmd(41, 0, 0))
         #     self.init_card_v1()  # Force v1 card initialization
         #     print("Initialized V1 Card")
         # except OSError:
@@ -106,10 +100,13 @@ class SDCard:
 
         # get the number of sectors
         # CMD9: response R2 (R1 byte + 16-byte block read)
-        if self.cmd(9, 0, 0, 0, False) != 0:
+        cmd9_response = self.cmd(9, 0, 0, 0, False)
+        print("Command 9 Response:", cmd9_response)
+        if cmd9_response != 0:
             raise OSError("no response from SD card")
         csd = bytearray(16)
         self.readinto(csd)
+        print(f"CSD: {csd}")
         if csd[0] & 0xC0 == 0x40:  # CSD version 2.0
             self.sectors = ((csd[8] << 8 | csd[9]) + 1) * 1024
         elif csd[0] & 0xC0 == 0x00:  # CSD version 1.0 (old, <=2GB)
@@ -128,18 +125,19 @@ class SDCard:
 
         # set to high data rate now that it's initialised
         self.init_spi(baudrate)
+        print("Set SD Card Baudrate to: ", baudrate)
 
     def init_card_v1(self):
         for i in range(_CMD_TIMEOUT):
             time.sleep_ms(50)
-            self.cmd(55, 0, 0)
-            print("CMD55 response (v1):", self.cmd(55, 0, 0))
-            if self.cmd(41, 0, 0) == 0:
+            cmd55_response = self.cmd(55, 0, 0)
+            print("CMD55 response (v1):", cmd55_response)
+            cmd41_response = self.cmd(41, 0, 0)
+            print("CMD41 response (v1):", cmd41_response)
+            if cmd41_response == 0:
                 # SDSC card, uses byte addressing in read/write/erase commands
                 self.cdv = 512
                 print("[SDCard] v1 card")
-                print("CMD41 response (v1):", self.cmd(41, 0, 0))
-
                 return
         raise OSError("timeout waiting for v1 card")
 
@@ -147,11 +145,7 @@ class SDCard:
         for i in range(_CMD_TIMEOUT):
             time.sleep_ms(50)
             self.cmd(58, 0, 0, 4)
-            print("CMD58 response:", self.cmd(58, 0, 0, 4))
             self.cmd(55, 0, 0)
-            print("CMD55 response:", self.cmd(55, 0, 0))
-            print("CMD41 response:", self.cmd(41, 0x40000000, 0))
-
             if self.cmd(41, 0x40000000, 0) == 0:
                 self.cmd(58, 0, 0, -4)  # 4-byte response, negative means keep the first byte
                 ocr = self.tokenbuf[0]  # get first byte of response, which is OCR
@@ -167,7 +161,7 @@ class SDCard:
 
     def cmd(self, cmd, arg, crc, final=0, release=True, skip1=False):
         self.cs(0)
-
+        # print("Set CS to 0") # Debugging Statement
         # create and send the command
         buf = self.cmdbuf
         buf[0] = 0x40 | cmd
@@ -205,9 +199,9 @@ class SDCard:
 
     def readinto(self, buf):
         self.cs(0)
-        print("CS set to 0")
+        # print("CS set to 0") # Debugging statement
         # read until start byte (0xff)
-        for i in range(_CMD_TIMEOUT * 2):
+        for i in range(_CMD_TIMEOUT):
             self.spi.readinto(self.tokenbuf, 0xFF)
             if self.tokenbuf[0] == _TOKEN_DATA:
                 break
