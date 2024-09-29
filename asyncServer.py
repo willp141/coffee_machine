@@ -80,99 +80,9 @@ class AsyncServer:
             await writer.aclose()
             print("SSE connection fully closed.")
 
-    # def web_page_server_old(self):
-    #     """Generate the HTML for the current state including status indicators."""
-    #     print(f"Web page server state is {self.Astate()}")
-
-    #     buttons_html = self.render_buttons_server()
-    #     # Boiler and pump status indicators
-    #     boiler_status = "ON" if self.shared_data['heater_state'] else "OFF"
-    #     pump_status = "ON" if self.shared_data['pump_state'] else "OFF"
-    #     current_temp = self.shared_data['temperature']
-
-    #     status_html = f"""
-    #         <div style="margin: 20px; font-size: 18px;">
-    #             <p>Boiler Status: <strong id="boiler_status" style="color: {'green' if boiler_status == 'ON' else 'red'};">{boiler_status}</strong></p>
-    #             <p>Pump Status: <strong id="pump_status" style="color: {'green' if pump_status == 'ON' else 'red'};">{pump_status}</strong></p>
-    #             <p>Current Temperature: <strong id="temperature">{current_temp}°C</strong></p>
-    #         </div>
-    #     """
-
-    #     html = f"""
-    #     <!DOCTYPE html>
-    #     <html>
-    #     <head>
-    #         <meta charset="UTF-8">
-    #         <title>Coffee Machine Control</title>
-    #         <style>
-    #             body {{ font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }}
-    #             .button {{ display: inline-block; padding: 15px 25px; font-size: 20px; cursor: pointer; text-align: center; text-decoration: none; outline: none; color: #fff; background-color: #4CAF50; border: none; border-radius: 15px; margin: 10px; }}
-    #             .button.off {{ background-color: #f44336; }}
-    #             .status {{ margin: 20px; font-size: 18px; }}
-    #         </style>
-    #     </head>
-    #     <body>
-    #         <h1>Coffee Machine Control</h1>
-    #         {buttons_html}
-    #         {status_html}
-
-    #         <!-- SSE JavaScript for live updates -->
-    #         <script>
-    #             // Ensure EventSource is only initialized once
-    #             let eventSource = null;
-
-    #             if (!eventSource) {{
-    #                 eventSource = new EventSource('/events');
-    #                 console.log("SSE connection opened");
-
-    #                 eventSource.onmessage = function(event) {{
-    #                     const data = JSON.parse(event.data);
-    #                     console.log("Received JSON update: ", data);
-
-    #                     // Update the UI with the new data
-    #                     document.getElementById('boiler_status').textContent = data.heater_state ? 'ON' : 'OFF';
-    #                     document.getElementById('boiler_status').style.color = data.heater_state ? 'green' : 'red';
-    #                     document.getElementById('pump_status').textContent = data.pump_state ? 'ON' : 'OFF';
-    #                     document.getElementById('pump_status').style.color = data.pump_state ? 'green' : 'red';
-    #                     document.getElementById('temperature').textContent = data.temperature + "°C";
-    #                 }};
-
-    #                 eventSource.onerror = function(error) {{
-    #                     console.error("Error with SSE connection:", error);
-    #                 }};
-    #             }}
-
-    #             // Button actions
-    #             function makeCoffee() {{ sendRequest('/make_coffee'); }}
-    #             function heatWait() {{ sendRequest('/heat_wait'); }}
-    #             function ready() {{ sendRequest('/im_ready'); }}
-    #             function wantSteam() {{ sendRequest('/want_steam'); }}
-    #             function pumpTest() {{ sendRequest('/pump_test'); }}
-    #             function boilerTest() {{ sendRequest('/boiler_test'); }}
-    #             function cancel() {{ sendRequest('/cancel'); }}
-    #             function anotherCoffee() {{ sendRequest('/another_coffee'); }}
-    #             function goToWait() {{ sendRequest('/go_to_wait'); }}
-
-    #              // Generic function to handle HTTP requests
-    #             function sendRequest(endpoint) {{
-    #                 fetch(endpoint)
-    #                 .then(response => {{
-    #                     console.log(`Endpoint request sent.`);
-    #                 }}).catch(error => {{
-    #                     console.error(`Error sending endpoint request:`, error);
-    #                 }});
-    #             }}
-
-    #         </script>
-    #     </body>
-    #     </html>
-    #     """
-    #     return html
-
-
     def web_page_server(self):
         """Generate the HTML for the current state including status indicators."""
-        print(f"     Web page server state is {self.Astate()}")
+        print(f"     webpage server: Astate is {self.Astate()}")
 
         buttons_html = self.render_buttons_server()
         control_html = self.render_control_html()
@@ -183,7 +93,9 @@ class AsyncServer:
         current_goal = self.shared_data['target_temp']
         current_tolerance = self.shared_data['temp_tolerance']
         current_pump_time = self.shared_data['mpump_on_time']
-        
+
+        print("     webpage server: Shared State is ", current_state)
+
         status_html = f"""
             <div style="margin: 20px; font-size: 18px;">
                 <p>Boiler Status: <strong id="boiler_status" style="color: {'green' if boiler_status == 'ON' else 'red'};">{boiler_status}</strong></p>
@@ -259,25 +171,25 @@ class AsyncServer:
         control_html = f"""
             <div style="margin: 20px; font-size: 18px;">
                 <label for="target_temp">Target Temperature:</label>
-                <span>80°C</span>
-                <input type="range" id="target_temp" name="target_temp" min="80" max="100" value="{target_temp}" 
+                <span>MIN</span>
+                <input type="range" id="target_temp" name="target_temp" min="0" max="105" value="{target_temp}" 
                     oninput="updateValue('target_temp', this.value)">
-                <span>100°C</span>
-                <span id="target_temp_value">{target_temp}°C</span>
+                <span>MAX</span>
+                <span id="target_temp_value">Selection: {target_temp}°C</span>
                 <br>
                 <label for="temp_tolerance">Temperature Tolerance:</label>
                 <span>1°C</span>
                 <input type="range" id="temp_tolerance" name="temp_tolerance" min="1" max="10" value="{temp_tolerance}" 
                     oninput="updateValue('temp_tolerance', this.value)">
                 <span>10°C</span>
-                <span id="temp_tolerance_value">{temp_tolerance}°C</span>
+                <span id="temp_tolerance_value">Selection: {temp_tolerance}°C</span>
                 <br>
                 <label for="mpump_on_time">Pump On Time:</label>
                 <span>5 Sec</span>
                 <input type="range" id="mpump_on_time" name="mpump_on_time" min="5" max="15" value="{pump_on_time}" 
                     oninput="updateValue('mpump_on_time', this.value)">
                 <span>15 Sec</span>
-                <span id="mpump_on_time_value">{pump_on_time}s</span>
+                <span id="mpump_on_time_value">Selection: {pump_on_time} Sec</span>
             </div>
         """
         return control_html
@@ -286,6 +198,8 @@ class AsyncServer:
         """Render buttons and state indicators based on the current state."""
         buttons_html = ""
         current_state = self.Astate()
+        print("     render buttons: self.Astate is: ", current_state)
+        print("     render buttons: shared state is: ", self.shared_data['shared_state'])       
         # Render buttons based on the current state
         if current_state == State.DEFAULT:
             buttons_html += '<a class="button" href="/make_coffee">Make Me a Coffee</a>'

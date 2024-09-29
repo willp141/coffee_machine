@@ -31,7 +31,8 @@ updateTemp = tempTimer(
     coffee_machine.getState, 
     coffee_machine.boiler.on, 
     coffee_machine.boiler.off,
-    coffee_machine.check_state
+    coffee_machine.check_state,
+    coffee_machine.getTemps
 )
 
 # # Audio Test Branch

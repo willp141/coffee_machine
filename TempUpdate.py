@@ -4,13 +4,13 @@ from machine import Pin # type: ignore
 from machineManager import State
 
 class tempTimer:
-    def __init__(self, shared_data, getstate, boiler_on, boiler_off, check_state):
+    def __init__(self, shared_data, getstate, boiler_on, boiler_off, check_state, get_temps):
         self.shared_data = shared_data
-        self.period = 1 # reduce period from 5 - 1 second
+        self.period = 3 # reduce period from 5 - 3 second
         self.task = None
         self.tstate = getstate
         self.check_state = check_state
-        
+        self.get_temps = get_temps
         # Controls
         self.boileron = boiler_on
         self.boileroff = boiler_off
@@ -19,13 +19,14 @@ class tempTimer:
         self.onewire_pin = Pin(27)  # GPIO pin connected to DS18B20 data line
         self.temp_sensor = ds18x20.DS18X20(onewire.OneWire(self.onewire_pin))
         self.sensor_rom = self.temp_sensor.scan()  # Scan for all connected sensors
-        self.current_temperature = 0  # Initialize current temperature
         print(f"     Found DS18B20 sensors: {self.sensor_rom}")
 
         # Target temperature range
         self.target_temp = self.shared_data['target_temp']
         self.temp_tolerance = self.shared_data['temp_tolerance']
-         
+        print("     Init Temp: self.target_temp is: ", self.target_temp)
+        print("     Init Temp: self.temp_tolerance is: ", self.temp_tolerance)
+
     async def startTimer(self):
         """Begin Updating Shared Data"""
         print("Starting Temp Updates")
@@ -50,19 +51,29 @@ class tempTimer:
                 # Read temperature from the first sensor in the list (or iterate if multiple sensors)
                 try:
                     self.shared_data['temperature'] = self.temp_sensor.read_temp(self.sensor_rom[0])
-                    print(f"     Current Boiler Temperature: {self.shared_data['temperature']}°C")
+
                 except Exception as e:
                     print(f"Error reading temperature: {e}")
             current_state = self.tstate()
+            current_target_temp, current_temp_tolerance = self.get_temps()
+
+            print(f"     update_temparature: Current Boiler Temperature: {self.shared_data['temperature']}°C")
+            print(f"     update_temparature: Current Shared State: {self.shared_data['shared_state']}")
+            print(f"     update_temparature: Current tstate: {current_state}")
+            print(f"     update_temparature: current_target_temp is: {current_target_temp}")
+            print(f"     update_temparature: current_temp_tolerance is: {current_temp_tolerance}")
+
             # Control boiler heater based on temperature range
             if current_state == State.DEFAULT:
                 print("     update_temparature: State 0 No action")
             elif current_state == State.AUTO or State.GET_READY or State.PUMP or State.STEAM:
-                if (self.current_temperature < (self.target_temp - self.temp_tolerance)):
+                goal = (current_target_temp - current_temp_tolerance)
+                print(f"     update_temparature: Goal temp: {goal}")
+                if (self.shared_data['temperature'] < (current_target_temp - current_temp_tolerance)):
                     self.boileron()  # Turn on heater
                     self.shared_data['heater_state'] = True
                     print("     update_temparature: Temp Updated turned on heater")
-                elif (self.current_temperature > (self.target_temp + self.temp_tolerance)):
+                elif (self.shared_data['temperature'] >= (current_target_temp + current_temp_tolerance)):
                     self.boileroff()  # Turn off heater
                     self.shared_data['heater_state'] = False
                     print("     update_temparature: Temp Updated turned off heater")

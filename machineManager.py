@@ -42,9 +42,10 @@ class CoffeeMachine:
             'target_temp': 95, # If this updated, also need to update in default state handler
             'temp_tolerance': 5, # If this updated, also need to update in default state handler
             'mpump_on_time': 5,
-            'shared_state': 0
+            'shared_state': self.state
         }
         
+        print("     Shared state is: ", self.shared_data['shared_state'])
         print("     Buttons Initialized")
         self.sse_clients = []  # Store connected SSE clients
         print("     SSE Clients Initialized")
@@ -62,9 +63,22 @@ class CoffeeMachine:
 
     def getState(self):
         current_state = self.state
+        self.shared_data['shared_state'] = current_state
         # print(f"     Get State function returns {current_state}")
         return current_state
-
+    
+    def getTemps(self):
+        current_temp_tolerance = self.shared_data['temp_tolerance']
+        current_target_temp = self.shared_data['target_temp']
+        print("     getTemps: current_temp_tolerance is now ", current_temp_tolerance)
+        print("     getTemps: current_target_temp is now ", current_target_temp)
+        return current_target_temp, current_temp_tolerance
+    
+    async def updateTemps(self, tolerance, target):
+        self.shared_data['temp_tolerance'] = tolerance
+        self.shared_data['target_temp'] = target
+        return target, tolerance
+    
     def update_button(self, button_name, button_state):
         """ Update button states and check transitions """
         if button_name in self.buttons:
@@ -73,6 +87,8 @@ class CoffeeMachine:
 
     def check_state(self):
         """ Check current state and handle transitions """
+        print("     check_state: Before handle shared state is: ", self.shared_data['shared_state'])
+        print("     check_state: Before handle self.state is: ", self.state)
         if self.state == State.DEFAULT:
             self.handle_default_state()
         elif self.state == State.AUTO:
@@ -83,6 +99,8 @@ class CoffeeMachine:
             self.handle_run_pump_state()
         elif self.state == State.STEAM:
             self.handle_steam_state()
+        print("     check_state: Before handle self.state is: ", self.state)
+        print("     check_state: After handle shared state is: ", self.shared_data['shared_state'])
         return
 
     def handle_default_state(self):
@@ -172,8 +190,9 @@ class CoffeeMachine:
         # self.target_temp = 95
         self.pump.on()
         self.shared_data['pump_state'] = True
-        # time.sleep(self.shared_data['mpump_on_time']) # Changed to be asynchronous below.
+        print("Going to sleep for: ", self.shared_data['mpump_on_time'])
         await asyncio.sleep(self.shared_data['mpump_on_time'])
+        print("Waking up from sleep, turning pump off")
         self.pump.off()
         self.shared_data['pump_state'] = False
         self.state = State.GET_READY  # Go back to HEAT_WAIT after running pump
@@ -185,7 +204,7 @@ class CoffeeMachine:
             self.shared_data['heater_state'] = False
             self.shared_data['pump_state'] = False
             self.buttons['mCANCEL_BUTTON'] = False
-            self.state = State.DEFAULT
+            self.shared_data['shared_state'] = State.PUMP
 
 
     def handle_steam_state(self):
@@ -235,6 +254,7 @@ class CoffeeMachine:
         elif 'GET /boiler_test' in request:
             self.update_button('mBOILER_State', True)
         elif '/update' in request:
+            print("Starting update request of temp value")
             try:
                 # Split the request to get the query string
                 # The request format is expected to be: "GET /update?param=value HTTP/1.1"
@@ -245,10 +265,12 @@ class CoffeeMachine:
 
                     for param in params:
                         key, value = param.split('=')
+                        print("Value being updated is: ", key)
                         # Check if the key exists in shared_data and update the value
                         if key in self.shared_data:
                             self.shared_data[key] = int(value)
                             print(f"Updated {key} to {value}")
+                            print(f"Shared data {key} update: ", self.shared_data[key])
                     return '200 OK', 'text/plain', 'Updated successfully'
                 else:
                     print("No query string found in the request.")
