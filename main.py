@@ -26,9 +26,6 @@ server = AsyncServer(
     coffee_machine.getState
 )
 
-# I think I need a third process...
-    # How do I ensure current state is checked periodically?
-    # Could do this as part of temp timer. Check state and buttons for temp conditions
 updateTemp = tempTimer(
     coffee_machine.shared_data, 
     coffee_machine.getState, 
@@ -54,8 +51,6 @@ updateTemp = tempTimer(
 #     await play_wav_async()
 
 # asyncio.run(main())
-
-
 
 
 # Main Code Branch

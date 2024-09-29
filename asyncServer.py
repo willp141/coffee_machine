@@ -290,10 +290,8 @@ class AsyncServer:
         if current_state == State.DEFAULT:
             buttons_html += '<a class="button" href="/make_coffee">Make Me a Coffee</a>'
             buttons_html += '<a class="button" href="/heat_wait">Heat & Wait</a>'
-
             buttons_html += '<a class="button" href="/pump_test">Pump ON/OFF</a>'
             buttons_html += '<a class="button" href="/boiler_test">Boiler ON/OFF</a>'
-    
         elif current_state == State.AUTO:
             buttons_html += '<p>Heating water to coffee temperature...</p>'
             buttons_html += '<a class="button" href="/cancel">Cancel</a>'
