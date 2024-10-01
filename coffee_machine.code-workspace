@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"name": "serial:/COM4",
+			"name": "serial:/com4",
 			"uri": "serial://com4/"
 		}
 	]

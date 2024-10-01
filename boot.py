@@ -7,7 +7,7 @@
 
 import network # type: ignore
 import machine # type: ignore
-import mip
+import mip # type: ignore
 
 def do_connect():
     wlan = network.WLAN(network.STA_IF)
