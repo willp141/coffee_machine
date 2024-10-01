@@ -17,23 +17,35 @@ from audio import play_wav_file
 from asyncAudio import play_wav_async
 import time
 
+import tinyweb
+
+
+# Create web server application
+app = tinyweb.webserver()
+
+# Index page
+@app.route('/')
+async def index(req, resp):
+    await resp.start_html()
+    await resp.send_file('pages/index.html')
+
 # Initialize Classes
-coffee_machine = CoffeeMachine()
+# coffee_machine = CoffeeMachine()
 
-server = AsyncServer(
-    coffee_machine.requestHandler, 
-    coffee_machine.shared_data,
-    coffee_machine.getState
-)
+# server = AsyncServer(
+#     coffee_machine.requestHandler, 
+#     coffee_machine.shared_data,
+#     coffee_machine.getState
+# )
 
-updateTemp = tempTimer(
-    coffee_machine.shared_data, 
-    coffee_machine.getState, 
-    coffee_machine.boiler.on, 
-    coffee_machine.boiler.off,
-    coffee_machine.check_state,
-    coffee_machine.getTemps
-)
+# updateTemp = tempTimer(
+#     coffee_machine.shared_data, 
+#     coffee_machine.getState, 
+#     coffee_machine.boiler.on, 
+#     coffee_machine.boiler.off,
+#     coffee_machine.check_state,
+#     coffee_machine.getTemps
+# )
 
 # # Audio Test Branch
 # def main():
@@ -55,9 +67,11 @@ updateTemp = tempTimer(
 
 
 # Main Code Branch
-async def main():
+def run():
+    print("starting webserver")
+    app.run(host='127.0.0.1', port=8081)
 
-    asyncio.create_task(updateTemp.startTimer())
-    await server.start_server()
+# asyncio.run(main())
 
-asyncio.run(main())
+if __name__ == '__main__':
+    run()

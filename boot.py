@@ -7,6 +7,7 @@
 
 import network # type: ignore
 import machine # type: ignore
+import mip
 
 def do_connect():
     wlan = network.WLAN(network.STA_IF)
@@ -19,4 +20,5 @@ def do_connect():
     print('network config:', wlan.ifconfig())
 
 do_connect()
+mip.install("logging")
 print("Boot Complete")
