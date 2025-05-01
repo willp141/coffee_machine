@@ -83,10 +83,17 @@ class CoffeeMachine:
         """ Update button states and check transitions """
         if button_name in self.buttons:
             self.buttons[button_name] = button_state
-            self.check_state()
+            # print("Updating buttons - calling check_state")
+            # self.check_state()
+    
+    def print_buttons(self):
+        print("Buttons:")
+        for button_name in self.buttons:
+            print("     ", button_name, "=", self.buttons[button_name])
 
-    def check_state(self):
+    async def check_state(self, Timer=None):
         """ Check current state and handle transitions """
+        self.print_buttons()
         print("     check_state: Before handle shared state is: ", self.shared_data['shared_state'])
         print("     check_state: Before handle self.state is: ", self.state)
         if self.state == State.DEFAULT:
@@ -99,7 +106,7 @@ class CoffeeMachine:
             self.handle_run_pump_state()
         elif self.state == State.STEAM:
             self.handle_steam_state()
-        print("     check_state: Before handle self.state is: ", self.state)
+        print("     check_state: After handle self.state is: ", self.state)
         print("     check_state: After handle shared state is: ", self.shared_data['shared_state'])
         return
 
@@ -204,7 +211,7 @@ class CoffeeMachine:
             self.shared_data['heater_state'] = False
             self.shared_data['pump_state'] = False
             self.buttons['mCANCEL_BUTTON'] = False
-            self.shared_data['shared_state'] = State.PUMP
+            self.shared_data['shared_state'] = State.DEFAULT
 
 
     def handle_steam_state(self):
