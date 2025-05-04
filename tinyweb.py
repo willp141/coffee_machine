@@ -6,6 +6,7 @@ MIT license
 import logging
 import asyncio
 import json
+import ujson
 import gc
 import os
 import sys
@@ -305,6 +306,13 @@ class response:
                 raise HTTPException(404)
             else:
                 raise
+    
+    # MY ADDITION TO TINY WEB FOR /STATUS
+    async def send_json(self, obj, status_code=200):
+        await self.writer.awrite(
+            'HTTP/1.0 {} OK\r\nContent-Type: application/json\r\n\r\n'.format(status_code)
+        )
+        await self.writer.awrite(ujson.dumps(obj))
 
 
 async def restful_resource_handler(req, resp, param=None):

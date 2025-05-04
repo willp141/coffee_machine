@@ -1,6 +1,101 @@
+<!DOCTYPE html>
 <html>
+<head>
+	<meta charset="UTF-8">
+	<title>Coffee Machine UI</title>
+	<style>
+		body {
+			font-family: monospace;
+			background-color: #111;
+			color: #eee;
+			text-align: center;
+			padding: 30px;
+		}
+		h1 {
+			color: #ffcc00;
+		}
+		button {
+			font-size: 1.2em;
+			padding: 12px 20px;
+			margin: 10px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.heat { background-color: #e67e22; color: white; }
+		.pump { background-color: #e74c3c; color: white; }
+		.steam { background-color: #9b59b6; color: white; }
+		.cancel { background-color: #555; color: white; }
 
+		#status {
+			margin-top: 20px;
+			font-size: 1.1em;
+			background: #222;
+			padding: 15px;
+			border-radius: 10px;
+			display: inline-block;
+		}
+	</style>
+</head>
 <body>
-    <h1>Hello, world!</h1>
 
+	<h1>ESPRESS-O-MATIC 9000</h1>
+
+	<div id="controls">
+		<button class="heat" id="btn-heat" onclick="sendCommand('/heat')">HEAT UP BITCH</button>
+		<button class="pump" id="btn-pump" onclick="sendCommand('/pump')">PUMP MUTHAFUCKAAA</button>
+		<button class="steam" id="btn-steam" onclick="sendCommand('/steam')">LETS GET STEAMYYYYY</button>
+		<button class="cancel" id="btn-cancel" onclick="sendCommand('/cancel')">CANCEL</button>
+	</div>
+
+	<div id="status">
+		<p><strong>Temp:</strong> <span id="temp">--</span> °C</p>
+		<p><strong>State:</strong> <span id="state">--</span></p>
+	</div>
+
+	<script>
+		let currentState = "IDLE";
+
+		async function sendCommand(path) {
+			try {
+				const res = await fetch(path);
+				const text = await res.text();
+				console.log("Command response:", text);
+				await fetchStatus();  // update right away
+			} catch (e) {
+				alert("Command failed");
+			}
+		}
+
+		async function fetchStatus() {
+			try {
+				const res = await fetch('/status');
+				const data = await res.json();
+				document.getElementById('temp').textContent = data.temp.toFixed(1);
+				document.getElementById('state').textContent = data.state;
+				currentState = data.state;
+				updateButtons();
+			} catch (e) {
+				document.getElementById('state').textContent = 'Disconnected';
+			}
+		}
+
+		function updateButtons() {
+			const btnHeat = document.getElementById('btn-heat');
+			const btnPump = document.getElementById('btn-pump');
+			const btnSteam = document.getElementById('btn-steam');
+			const btnCancel = document.getElementById('btn-cancel');
+
+			// Show buttons based on state
+			btnHeat.style.display = (currentState === 'IDLE') ? 'inline-block' : 'none';
+			btnPump.style.display = (currentState === 'READY_COFFEE') ? 'inline-block' : 'none';
+			btnSteam.style.display = (currentState === 'READY_COFFEE') ? 'inline-block' : 'none';
+			btnCancel.style.display = (currentState !== 'IDLE' && currentState !== 'ERROR') ? 'inline-block' : 'none';
+		}
+
+		setInterval(fetchStatus, 2000);
+		fetchStatus();
+	</script>
+
+</body>
 </html>

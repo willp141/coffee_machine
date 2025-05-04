@@ -1,7 +1,7 @@
 import uasyncio as asyncio # type: ignore
 import onewire, ds18x20  # type: ignore
 from machine import Pin # type: ignore
-from machineManager import State
+from machineManager_OLD import State
 
 class tempTimer:
     def __init__(self, shared_data, getstate, boiler_on, boiler_off, check_state, get_temps):
