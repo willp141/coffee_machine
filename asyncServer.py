@@ -39,6 +39,11 @@ def setup_routes(hw, state_machine):
 		hw.shared_state['idle_request'] = True
 		await resp.send("System cancelled")
 
+	@app.route('/steam_done')
+	async def steam_done(req, resp):
+		hw.shared_state['steam_done'] = True
+		await resp.send("Steam complete")
+
 	@app.route('/debug')
 	async def debug(req, resp):
 		data = {

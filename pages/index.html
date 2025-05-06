@@ -26,6 +26,7 @@
 		.pump { background-color: #e74c3c; color: white; }
 		.steam { background-color: #9b59b6; color: white; }
 		.cancel { background-color: #555; color: white; }
+		.done { background-color: #27ae60; color: white; }
 
 		#status {
 			margin-top: 20px;
@@ -34,6 +35,33 @@
 			padding: 15px;
 			border-radius: 10px;
 			display: inline-block;
+		}
+
+		#warning {
+			margin-top: 10px;
+		}
+
+		#too-hot-msg {
+			color: red;
+			font-weight: bold;
+			display: none;
+		}
+
+		.spinner {
+			border: 4px solid #333;
+			border-top: 4px solid #ffcc00;
+			border-radius: 50%;
+			width: 24px;
+			height: 24px;
+			animation: spin 1s linear infinite;
+			display: inline-block;
+			vertical-align: middle;
+			margin-left: 10px;
+		}
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
 		}
 	</style>
 </head>
@@ -45,12 +73,20 @@
 		<button class="heat" id="btn-heat" onclick="sendCommand('/heat')">HEAT UP BITCH</button>
 		<button class="pump" id="btn-pump" onclick="sendCommand('/pump')">PUMP MUTHAFUCKAAA</button>
 		<button class="steam" id="btn-steam" onclick="sendCommand('/steam')">LETS GET STEAMYYYYY</button>
-		<button class="cancel" id="btn-cancel" onclick="sendCommand('/cancel')">CANCEL</button>
+		<button class="done" id="btn-steam-done" onclick="sendCommand('/steam_done')">✅ DONE STEAMING</button>
+		<button class="cancel" id="btn-cancel" onclick="sendCommand('/cancel')">❌ CANCEL</button>
 	</div>
 
 	<div id="status">
 		<p><strong>Temp:</strong> <span id="temp">--</span> °C</p>
 		<p><strong>State:</strong> <span id="state">--</span></p>
+	</div>
+
+	<div id="warning">
+		<span id="too-hot-msg">
+			🔥 TOO HOT TO PUMP! Cooling down...
+			<span class="spinner"></span>
+		</span>
 	</div>
 
 	<script>
@@ -74,23 +110,37 @@
 				document.getElementById('temp').textContent = data.temp.toFixed(1);
 				document.getElementById('state').textContent = data.state;
 				currentState = data.state;
-				updateButtons();
+				updateButtons(data);
 			} catch (e) {
 				document.getElementById('state').textContent = 'Disconnected';
 			}
 		}
 
-		function updateButtons() {
+		function updateButtons(data) {
 			const btnHeat = document.getElementById('btn-heat');
 			const btnPump = document.getElementById('btn-pump');
 			const btnSteam = document.getElementById('btn-steam');
 			const btnCancel = document.getElementById('btn-cancel');
+			const btnSteamDone = document.getElementById('btn-steam-done');
+			const tooHotMsg = document.getElementById('too-hot-msg');
 
-			// Show buttons based on state
+			// Show/hide buttons based on state
 			btnHeat.style.display = (currentState === 'IDLE') ? 'inline-block' : 'none';
 			btnPump.style.display = (currentState === 'READY_COFFEE') ? 'inline-block' : 'none';
 			btnSteam.style.display = (currentState === 'READY_COFFEE') ? 'inline-block' : 'none';
 			btnCancel.style.display = (currentState !== 'IDLE' && currentState !== 'ERROR') ? 'inline-block' : 'none';
+			btnSteamDone.style.display = (currentState === 'READY_STEAM') ? 'inline-block' : 'none';
+
+			// Disable pump if too hot
+			if (currentState === 'READY_COFFEE' && data.temp > data.target_temp + 5) {
+				tooHotMsg.style.display = "inline-block";
+				btnPump.disabled = true;
+				btnPump.style.opacity = 0.5;
+			} else {
+				tooHotMsg.style.display = "none";
+				btnPump.disabled = false;
+				btnPump.style.opacity = 1;
+			}
 		}
 
 		setInterval(fetchStatus, 2000);

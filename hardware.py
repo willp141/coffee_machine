@@ -45,11 +45,17 @@ class CoffeeMachineHardware:
 			self.heater_off()
 
 	# ---------- TEMP SENSOR ----------
+
 	def get_temp(self, target=None):
-		if target is not None and self._fake_temp < target:
-			self._fake_temp += 0.2
+		if target is not None:
+			if self._fake_temp < target:
+				self._fake_temp += 0.2
+			elif self._fake_temp > target:
+				self._fake_temp -= 0.3
+		# Always return current temp
 		return self._fake_temp
 		# return self.temp_sensor.read()  # implement this later
+
 
 	# ---------- PUMP CONTROL ----------
 	async def run_pump(self, duration):

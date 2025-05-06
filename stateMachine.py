@@ -1,4 +1,5 @@
 import uasyncio as asyncio
+import time
 
 class CoffeeState:
     IDLE = 'IDLE'
@@ -63,16 +64,27 @@ class CoffeeMachineState:
     async def heat(self):
         self.hw.heater_on()
         current_temp = self.hw.get_temp(self.target_temp)
-        if current_temp >= self.target_temp:
+
+        if self.hw.requested_idle():
+            self.state = CoffeeState.IDLE
+        elif current_temp >= self.target_temp:
             if self.mode == 'coffee':
                 self.state = CoffeeState.READY_COFFEE
             else:
                 self.state = CoffeeState.READY_STEAM
 
-    async def ready_coffee(self):
-        self.hw.control_temp(93)
+        self.hw.clear_requests()
 
-        if self.hw.requested_pump():
+    async def ready_coffee(self):
+        self.hw.control_temp(self.target_temp)
+
+        current_temp = self.hw.get_temp(self.target_temp)
+
+        if current_temp > self.target_temp + self.hw.temp_window:
+            # Stay in READY_COFFEE, don't allow pump
+            pass
+        elif self.hw.requested_pump():
+            print("Starting pump")
             self.state = CoffeeState.PUMP
         elif self.hw.requested_steam():
             self.mode = 'steam'
@@ -83,15 +95,30 @@ class CoffeeMachineState:
 
         self.hw.clear_requests()
 
+
     async def ready_steam(self):
-        self.hw.control_temp(135)
-        if self.hw.steam_done():  # mechanical input or timeout
-            if self.hw.requested_coffee():
-                self.mode = 'coffee'
-                self.target_temp = 93
-                self.state = CoffeeState.HEAT
-            else:
+        self.hw.control_temp(self.target_temp)
+
+        timeout = 5 * 60  # 5 minutes
+        start_time = time.time()
+
+        while self.state == CoffeeState.READY_STEAM:
+            self.hw.control_temp(self.target_temp)
+
+            if self.hw.requested_idle():
+                print("Cancel requested → IDLE")
                 self.state = CoffeeState.IDLE
+                break
+            elif self.hw.steam_done():
+                print("Steam complete → IDLE")
+                self.state = CoffeeState.IDLE
+                break
+            elif time.time() - start_time > timeout:
+                print("Timeout in READY_STEAM → IDLE")
+                self.state = CoffeeState.IDLE
+                break
+
+            await asyncio.sleep(1)
 
         self.hw.clear_requests()
 
