@@ -44,6 +44,7 @@ def setup_routes(hw, state_machine):
 		hw.shared_state['steam_done'] = True
 		await resp.send("Steam complete")
 
+	#DEBUG ROUTES for testing and debugging
 	@app.route('/debug')
 	async def debug(req, resp):
 		data = {
@@ -57,6 +58,41 @@ def setup_routes(hw, state_machine):
 		json_str = ujson.dumps(data)
 		headers = 'HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n'
 		await resp.writer.awrite(headers + json_str)
+
+	# ADMIN ROUTES for manual control
+	@app.route('/admin/pump_on')
+	async def admin_pump_on(req, resp):
+		hw.admin_override = True
+		hw.pump_pin.on()
+		hw.set_led(True)
+		await resp.send("Pump manually turned on")
+
+	@app.route('/admin/pump_off')
+	async def admin_pump_off(req, resp):
+		hw.pump_pin.off()
+		hw.set_led(False)
+		await resp.send("Pump manually turned off")
+
+	@app.route('/admin/boiler_on')
+	async def admin_boiler_on(req, resp):
+		hw.admin_override = True
+		hw.heater_pin.on()
+		hw.set_led(True)
+		await resp.send("Boiler manually turned on")
+
+	@app.route('/admin/boiler_off')
+	async def admin_boiler_off(req, resp):
+		hw.heater_pin.off()
+		hw.set_led(False)
+		await resp.send("Boiler manually turned off")
+
+	# Optional: a button to clear override
+	@app.route('/admin/override_off')
+	async def admin_override_off(req, resp):
+		hw.admin_override = False
+		await resp.send("Admin override disabled")
+
+
 
 def run_server(hw, state_machine):
 	setup_routes(hw, state_machine)

@@ -8,7 +8,7 @@
 import uasyncio as asyncio
 from hardware import CoffeeMachineHardware
 from stateMachine import CoffeeMachineState
-from asyncServer import setup_routes, run_server
+from asyncServer import run_server
 
 # Initialize hardware control and state machine
 hw = CoffeeMachineHardware()
@@ -17,7 +17,8 @@ state_machine = CoffeeMachineState(hw)
 # Main event loop
 async def main():
 	await asyncio.gather(
-		asyncio.create_task(state_machine.run()),  # Run in background
+		asyncio.create_task(state_machine.run()),  # Start State Machine
+		asyncio.create_task(hw.temp_poll_loop()),  # start Temp updater
 		run_server(hw, state_machine) # Blocks forever
 	)
 

@@ -15,7 +15,7 @@ class CoffeeMachineState:
         self.state = CoffeeState.IDLE
         self.hw = hardware  # hardware interface class
         self.mode = 'coffee'  # or 'steam'
-        self.target_temp = 93  # default to coffee temp
+        self.target_temp = 199  # default to coffee temp (199F)
 
     async def run(self):
         print('Running State Machine')
@@ -46,17 +46,20 @@ class CoffeeMachineState:
     # ---------------- STATES ----------------
 
     async def idle(self):
+        if self.hw.admin_override:
+            return
+        
         self.hw.heater_off()
         self.hw.pump_off()
 
         if self.hw.requested_brew():
             self.mode = 'coffee'
-            self.target_temp = 93
+            self.target_temp = 199  # Default coffee temp (199F)
             self.state = CoffeeState.HEAT
 
         elif self.hw.requested_steam():
             self.mode = 'steam'
-            self.target_temp = 135
+            self.target_temp = 275  # Default steam temp (275F)
             self.state = CoffeeState.HEAT
         
         self.hw.clear_requests()
