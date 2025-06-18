@@ -45,3 +45,6 @@ The 3D Printed Housing:
 
 ![Coffee Machine Front](./images/Housing.png)
 
+Sweet, sweet success:
+
+![Coffee Machine Front](./images/CoffeeMakerPix-1.jpg)
