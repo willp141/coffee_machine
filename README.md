@@ -36,3 +36,12 @@ Requirements
 Warning
 
 May cause excessive caffeine consumption and minor debugging-induced existential crises.
+
+The PCB:
+
+![Coffee Machine Front](./images/PCB_pic.png)
+
+The 3D Printed Housing:
+
+![Coffee Machine Front](./images/Screenshot 2025-06-11 194559.png)
+
