@@ -39,9 +39,9 @@ May cause excessive caffeine consumption and minor debugging-induced existential
 
 The PCB:
 
-![Coffee Machine Front](./images/PCB_pic.png)
+![Coffee Machine Front](./images/PCB_Pic.png)
 
 The 3D Printed Housing:
 
-![Coffee Machine Front](./images/Screenshot 2025-06-11 194559.png)
+![Coffee Machine Front](./images/Housing.png)
 
