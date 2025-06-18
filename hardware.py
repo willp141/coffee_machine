@@ -53,11 +53,15 @@ class CoffeeMachineHardware:
 			self.set_led(False)
 
 	def control_temp(self, target_temp):
-		temp = self.get_temp(target_temp)
-		if temp < target_temp - self.temp_window:
-			self.heater_on()
-		elif temp > target_temp + self.temp_window:
+		temp = self.last_temp  # Use last known temperature
+		target = target_temp  # Target temperature in Fahrenheit
+		overshoot_comp = 20  # degrees F
+		window = self.temp_window
+		# Turn off heater early to compensate for thermal lag
+		if temp >= target - overshoot_comp:
 			self.heater_off()
+		elif temp <= target - window:
+			self.heater_on()
 
 	# ---------- TEMP SENSOR ----------
 
@@ -90,9 +94,11 @@ class CoffeeMachineHardware:
 	async def run_pump(self, duration):
 		if not self.admin_override:
 			self.pump_pin.on()
+			self.heater_on()
 			self.set_led(True)
 			await asyncio.sleep(duration)
 			self.pump_pin.off()
+			self.heater_off()
 			self.set_led(False)
 
 	def pump_off(self):

@@ -65,7 +65,7 @@ class CoffeeMachineState:
         self.hw.clear_requests()
 
     async def heat(self):
-        self.hw.heater_on()
+        self.hw.control_temp(self.target_temp)
         current_temp = self.hw.get_temp(self.target_temp)
 
         if self.hw.requested_idle():
@@ -83,7 +83,9 @@ class CoffeeMachineState:
 
         current_temp = self.hw.get_temp(self.target_temp)
 
-        if current_temp > self.target_temp + self.hw.temp_window:
+        if self.hw.requested_idle():
+            self.state = CoffeeState.IDLE
+        elif current_temp > self.target_temp + self.hw.temp_window:
             # Stay in READY_COFFEE, don't allow pump
             pass
         elif self.hw.requested_pump():
@@ -93,8 +95,6 @@ class CoffeeMachineState:
             self.mode = 'steam'
             self.target_temp = 135
             self.state = CoffeeState.HEAT
-        elif self.hw.requested_idle():
-            self.state = CoffeeState.IDLE
 
         self.hw.clear_requests()
 
@@ -126,7 +126,7 @@ class CoffeeMachineState:
         self.hw.clear_requests()
 
     async def pump(self):
-        await self.hw.run_pump(duration=10)
+        await self.hw.run_pump(duration=25)
         self.state = CoffeeState.READY_COFFEE
 
     async def error(self):
