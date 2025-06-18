@@ -1,5 +1,7 @@
 ☕ The Coffee Machine Project
 
+![Coffee Machine Front](./images/CoffeeMakerPix-9.jpg)
+
 Because pushing buttons is easier than being a barista.
 What is this?
 
