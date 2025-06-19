@@ -23,7 +23,7 @@ Features
 
     Pumps water (mostly where you want it)
 
-    Steams water (or is that just steam at that point? Steams steam?)
+    Steams water (or is it just steam at that point? Steams steam?)
 
     Pulls a brilliant double shot (allegedly)
 
