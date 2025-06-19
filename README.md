@@ -47,6 +47,8 @@ The PCB:
 
 ![Coffee Machine Front](./images/PCP_Pic.png)
 
+![image](https://github.com/user-attachments/assets/0f0428bc-42c9-43ab-ae5d-351f69414c3c)
+
 The 3D Printed Housing:
 
 ![Coffee Machine Front](./images/Housing.png)
