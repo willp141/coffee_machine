@@ -16,6 +16,7 @@ class CoffeeMachineState:
         self.hw = hardware  # hardware interface class
         self.mode = 'coffee'  # or 'steam'
         self.target_temp = 199  # default to coffee temp (199F)
+        self.temp_window = 5  # 5 Degree F window for control
 
     async def run(self):
         print('Running State Machine')
@@ -59,69 +60,62 @@ class CoffeeMachineState:
 
         elif self.hw.requested_steam():
             self.mode = 'steam'
-            self.target_temp = 275  # Default steam temp (275F)
+            self.target_temp = 260  # Default steam temp (275F)
             self.state = CoffeeState.HEAT
         
         self.hw.clear_requests()
 
     async def heat(self):
-        self.hw.control_temp(self.target_temp)
-        current_temp = self.hw.get_temp(self.target_temp)
+        await self.hw.control_temp_heat(self.target_temp)
+        current_temp = self.hw.last_temp  # Use latest read temp
 
         if self.hw.requested_idle():
             self.state = CoffeeState.IDLE
-        elif current_temp >= self.target_temp:
+        elif current_temp >= self.target_temp - self.temp_window:
             if self.mode == 'coffee':
                 self.state = CoffeeState.READY_COFFEE
-            else:
+            elif self.mode == 'steam':
+                await asyncio.sleep(10)  # Allow time for steam temp to rise
                 self.state = CoffeeState.READY_STEAM
 
         self.hw.clear_requests()
 
     async def ready_coffee(self):
-        self.hw.control_temp(self.target_temp)
-
-        current_temp = self.hw.get_temp(self.target_temp)
+        self.hw.control_temp_ready(self.target_temp)
+        current_temp = self.hw.last_temp
 
         if self.hw.requested_idle():
             self.state = CoffeeState.IDLE
-        elif current_temp > self.target_temp + self.hw.temp_window:
+        elif self.hw.requested_steam():
+            self.mode = 'steam'
+            self.target_temp = 260  # Switch to steam temp
+            self.state = CoffeeState.HEAT
+        elif current_temp > self.target_temp + self.temp_window:
             # Stay in READY_COFFEE, don't allow pump
             pass
         elif self.hw.requested_pump():
             print("Starting pump")
             self.state = CoffeeState.PUMP
-        elif self.hw.requested_steam():
-            self.mode = 'steam'
-            self.target_temp = 135
-            self.state = CoffeeState.HEAT
 
         self.hw.clear_requests()
 
 
     async def ready_steam(self):
-        self.hw.control_temp(self.target_temp)
+        # timeout = 5 * 60  # 5 minutes
+        # start_time = time.time()
 
-        timeout = 5 * 60  # 5 minutes
-        start_time = time.time()
+        self.hw.control_temp_ready(self.target_temp)
 
-        while self.state == CoffeeState.READY_STEAM:
-            self.hw.control_temp(self.target_temp)
-
-            if self.hw.requested_idle():
-                print("Cancel requested → IDLE")
-                self.state = CoffeeState.IDLE
-                break
-            elif self.hw.steam_done():
-                print("Steam complete → IDLE")
-                self.state = CoffeeState.IDLE
-                break
-            elif time.time() - start_time > timeout:
-                print("Timeout in READY_STEAM → IDLE")
-                self.state = CoffeeState.IDLE
-                break
-
-            await asyncio.sleep(1)
+        if self.hw.requested_idle():
+            print("Cancel requested → IDLE")
+            self.mode = 'coffee'
+            self.target_temp = 199  # Reset to coffee temp
+            self.state = CoffeeState.IDLE
+        elif self.hw.steam_done():
+            print("Steam complete → IDLE")
+            self.mode = 'coffee'
+            self.target_temp = 199  # Reset to coffee temp
+            self.state = CoffeeState.IDLE
 
         self.hw.clear_requests()
 

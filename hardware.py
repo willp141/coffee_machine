@@ -15,8 +15,6 @@ class CoffeeMachineHardware:
 			'idle_request': False,
 			'steam_done': False,
 		}
-		# Temp control parameters
-		self.temp_window = 5  # degrees C around target
 
 		# DS18B20 setup
 		self.onewire_pin = machine.Pin(27)
@@ -52,28 +50,67 @@ class CoffeeMachineHardware:
 			# TEST LED
 			self.set_led(False)
 
-	def control_temp(self, target_temp):
-		temp = self.last_temp  # Use last known temperature
-		target = target_temp  # Target temperature in Fahrenheit
-		overshoot_comp = 20  # degrees F
-		window = self.temp_window
-		# Turn off heater early to compensate for thermal lag
-		if temp >= target - overshoot_comp:
-			self.heater_off()
-		elif temp <= target - window:
-			self.heater_on()
+	# ---------- TEMP CONTROL ----------
+
+	async def control_temp_heat(self, target_temp):
+		temp = self.last_temp
+
+		# Thresholds
+		window = 5 # 5 Degree F window for control
+
+		# Determine if we are in steam mode or coffee mode
+		if target_temp >= 250:
+			# Steam mode control
+			overshoot_comp = 30
+
+			if temp >= target_temp - overshoot_comp:
+				# Enter pulse mode near target
+				self.heater_on()
+				await asyncio.sleep(5)
+				self.heater_off()
+				await asyncio.sleep(5)
+			else:
+				# Below target - overshoot compensation: full heater ON
+				self.heater_on()
+
+		else:
+			# Coffee mode control
+			overshoot_comp = 22
+
+			if temp >= target_temp - overshoot_comp:
+				self.heater_off()
+			elif temp <= target_temp - window:
+				self.heater_on()
+
+	async def control_temp_ready(self, target_temp):
+		temp = self.last_temp
+		tight_window = 4  # Steady state control window
+
+		if target_temp <= 250:
+			# Coffee mode control
+			if temp >= target_temp + tight_window:
+				self.heater_off()
+			elif temp <= target_temp - tight_window: # Burst Heating method instead of waiting for temp sensor to respond.
+				self.heater_on()
+				await asyncio.sleep(3)
+				self.heater_off()
+				await asyncio.sleep(5)
+		elif target_temp > 250:
+			# Steam mode bounce control
+			if temp > 260:
+				self.heater_off()
+			elif temp <= 260:
+				print("Steam heat pulse")
+				asyncio.create_task(self.steam_pulse())
+
+	async def steam_pulse(self):
+		self.heater_on()
+		await asyncio.sleep(10)
+		self.heater_off()
 
 	# ---------- TEMP SENSOR ----------
 
 	def get_temp(self, target=None):
-		# if target is not None:
-		# 	if self._fake_temp < target:
-		# 		self._fake_temp += 0.2
-		# 	elif self._fake_temp > target:
-		# 		self._fake_temp -= 0.3
-		# # Always return current temp
-		# return self._fake_temp
-		# return self.temp_sensor.read()  # implement this later
 		return self.last_temp
 
 	async def temp_poll_loop(self):
