@@ -7,11 +7,13 @@ What is this?
 
 A highly over-engineered coffee machine powered by:
 
-    Microcontrollers
+    ESP32 Microcontroller (Integrated radio)
 
-    Web interfaces
+    Web interface built with Micro Python
 
-    Relays
+    Custom built PCB driving PUMP and BOILER relays
+
+    MICRO SD for music storage
 
     Questionable life choices
 
@@ -21,17 +23,21 @@ Features
 
     Pumps water (mostly where you want it)
 
-    Makes coffee (allegedly)
+    Steams water (or is it just steam at that point? Steams steam?)
+
+    Pulls a brilliant double shot (allegedly)
 
     Web UI so you can brew from your couch
 
+    Pretty lights
+
 Requirements
 
-    ESP32
-
-    Coffee
-
     Low expectations
+
+    Coffee - has to be grind size 19, no more no less or it don't work...
+
+    Patience
 
 Warning
 
@@ -40,6 +46,8 @@ May cause excessive caffeine consumption and minor debugging-induced existential
 The PCB:
 
 ![Coffee Machine Front](./images/PCP_Pic.png)
+
+![image](https://github.com/user-attachments/assets/0f0428bc-42c9-43ab-ae5d-351f69414c3c)
 
 The 3D Printed Housing:
 
