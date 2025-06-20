@@ -81,6 +81,7 @@ class CoffeeMachineState:
         self.hw.clear_requests()
 
     async def ready_coffee(self):
+        print("Calling Control Temp Ready")
         self.hw.control_temp_ready(self.target_temp)
         current_temp = self.hw.last_temp
 
