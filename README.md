@@ -2,9 +2,6 @@
 
 ![Coffee Machine Front](./images/CoffeeMakerPix-9.jpg)
 
-Because pushing buttons is easier than being a barista.
-What is this?
-
 A highly over-engineered coffee machine powered by:
 
     ESP32 Microcontroller (Integrated radio)
