@@ -101,7 +101,7 @@ class CoffeeMachineHardware:
 	def control_temp_ready(self, target_temp):
 		temp = self.last_temp
 		now = time.time()
-		tight_window = 4
+		tight_window = 5
 
 		if temp >= target_temp:
 			self.pulse_armed = True
@@ -119,7 +119,7 @@ class CoffeeMachineHardware:
 					print("Starting coffee pulse")
 					self.heater_on()
 					self.pulse_active = True
-					self.pulse_end_time = now + 15 # Pulse for 15 seconds
+					self.pulse_end_time = now + 7 # Pulse for X seconds - used to be 15
 					self.pulse_armed = False  # Disarm until temp rises again
 
 			if self.pulse_active and now >= self.pulse_end_time:

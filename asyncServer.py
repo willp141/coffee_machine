@@ -3,6 +3,12 @@ import ujson
 
 app = tinyweb.webserver()
 
+# Function to prevent caching of dynamic content
+def _no_cache_headers():
+	return {'Cache-Control': 'no-cache, no-store, must-revalidate',
+	        'Pragma': 'no-cache',
+	        'Expires': '0'}
+
 def setup_routes(hw, state_machine):
 	@app.route('/')
 	async def index(req, resp):
@@ -22,26 +28,31 @@ def setup_routes(hw, state_machine):
 	@app.route('/heat')
 	async def heat(req, resp):
 		hw.shared_state['brew_request'] = True
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Heating started")
 
 	@app.route('/pump')
 	async def pump(req, resp):
 		hw.shared_state['pump_request'] = True
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Pump activated")
 
 	@app.route('/steam')
 	async def steam(req, resp):
 		hw.shared_state['steam_request'] = True
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Steam mode activated")
 
 	@app.route('/cancel')
 	async def cancel(req, resp):
 		hw.shared_state['idle_request'] = True
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("System cancelled")
 
 	@app.route('/steam_done')
 	async def steam_done(req, resp):
 		hw.shared_state['steam_done'] = True
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Steam complete")
 
 	#DEBUG ROUTES for testing and debugging
@@ -65,12 +76,14 @@ def setup_routes(hw, state_machine):
 		hw.admin_override = True
 		hw.pump_pin.on()
 		hw.set_led(True)
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Pump manually turned on")
 
 	@app.route('/admin/pump_off')
 	async def admin_pump_off(req, resp):
 		hw.pump_pin.off()
 		hw.set_led(False)
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Pump manually turned off")
 
 	@app.route('/admin/boiler_on')
@@ -78,18 +91,21 @@ def setup_routes(hw, state_machine):
 		hw.admin_override = True
 		hw.heater_pin.on()
 		hw.set_led(True)
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Boiler manually turned on")
 
 	@app.route('/admin/boiler_off')
 	async def admin_boiler_off(req, resp):
 		hw.heater_pin.off()
 		hw.set_led(False)
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Boiler manually turned off")
 
 	# Optional: a button to clear override
 	@app.route('/admin/override_off')
 	async def admin_override_off(req, resp):
 		hw.admin_override = False
+		await resp.start_response(status=200, headers={'Content-Type':'text/plain'})
 		await resp.send("Admin override disabled")
 
 
